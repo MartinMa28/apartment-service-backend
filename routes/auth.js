@@ -11,7 +11,7 @@ router.post('/login', (req, res, next) => {
 
     if (!user) {
       return res.status(401).json({
-        message: 'Authorization Failed',
+        message: 'Incorrect username or password',
       });
     }
 
