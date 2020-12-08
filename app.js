@@ -46,8 +46,6 @@ passport.use(
     { usernameField: 'email' },
     async (email, password, done) => {
       try {
-        console.log(email);
-        console.log(password);
         const user = await app.locals.db
           .collection('user')
           .findOne({ email: email });
