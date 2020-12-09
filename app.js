@@ -81,7 +81,7 @@ passport.deserializeUser(async (id, done) => {
 // =========== passport configs ===========
 
 // Create the MongoDB connection pool before the app runs
-MongoClient.connect('mongodb://localhost:27018', {
+MongoClient.connect('mongodb://db:27017', {
   useUnifiedTopology: true,
 })
   .then((client) => {

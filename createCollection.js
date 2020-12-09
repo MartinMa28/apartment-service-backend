@@ -75,7 +75,7 @@ const processLocalJson = (filePath) => {
 
 async function insertDocs() {
   try {
-    const client = await MongoClient.connect('mongodb://localhost:27018', {
+    const client = await MongoClient.connect('mongodb://db:27017', {
       useUnifiedTopology: true,
     });
 
