@@ -105,3 +105,6 @@ dist
 
 # dotenv
 .env
+
+# data file
+apts.json
