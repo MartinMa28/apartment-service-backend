@@ -1,5 +1,6 @@
 import { assert } from 'console';
 import fs from 'fs';
+import { MongoClient } from 'mongodb';
 
 const parsePrice = (priceStr) => {
   return parseFloat(priceStr.substring(1).replace(/,/g, ''));
@@ -52,7 +53,7 @@ const parseImageUrls = (imageUrls) => {
   );
 };
 
-const processLocalJson = async (filePath) => {
+const processLocalJson = (filePath) => {
   try {
     let jsonArr = JSON.parse(fs.readFileSync(filePath));
     jsonArr = jsonArr.map((element) => {
@@ -65,10 +66,37 @@ const processLocalJson = async (filePath) => {
 
       return element;
     });
-    console.log(jsonArr.slice(10));
+
+    return jsonArr;
   } catch (err) {
     console.log(err);
   }
 };
 
-processLocalJson('./apts.json');
+async function insertDocs() {
+  try {
+    const client = await MongoClient.connect('mongodb://localhost:27018', {
+      useUnifiedTopology: true,
+    });
+
+    const db = client.db('apartment_database');
+    await db.collection('apartment').deleteMany();
+    console.log(
+      `Deleted all of documents in apartment collection, remaining ${await db
+        .collection('apartment')
+        .countDocuments()}`
+    );
+    await db
+      .collection('apartment')
+      .insertMany(processLocalJson('./apts.json'));
+
+    console.log(
+      `Inserted ${await db.collection('apartment').countDocuments()} documents.`
+    );
+    client.close();
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+insertDocs();
