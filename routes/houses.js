@@ -21,6 +21,35 @@ router.get('/by_id/:houseId', async (req, res) => {
   }
 });
 
+router.post('/update_price/:houseId/:price', async (req, res) => {
+  try {
+    const { houseId, price } = req.params;
+
+    const filter = {
+      _id: new ObjectId(houseId),
+    };
+
+    const updateDoc = {
+      $set: {
+        'result-price': parseInt(price),
+      },
+    };
+
+    const result = await req.app.locals.db
+      .collection('apartment')
+      .updateOne(filter, updateDoc);
+    console.log(result);
+
+    res.status(200).json({
+      message: 'Updated the rent',
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: `Internal error: ${err}`,
+    });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const {
