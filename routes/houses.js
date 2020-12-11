@@ -1,6 +1,25 @@
 import express from 'express';
+import { ObjectId } from 'mongodb';
 
 const router = express.Router();
+
+router.get('/by_id/:houseId', async (req, res) => {
+  try {
+    const { houseId } = req.params;
+
+    const house = await req.app.locals.db
+      .collection('apartment')
+      .findOne({ _id: new ObjectId(houseId) });
+
+    res.status(200).json({
+      house: house,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: `Internal error: ${err}`,
+    });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
