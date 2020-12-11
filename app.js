@@ -7,6 +7,7 @@ import indexRouter from './routes/index';
 import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import housesRouter from './routes/houses';
+import watchRouter from './routes/watch';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
@@ -36,6 +37,7 @@ app.use('/', indexRouter);
 app.use('/user', usersRouter);
 app.use('/auth', authRouter);
 app.use('/houses', housesRouter);
+app.use('/watch', watchRouter);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
