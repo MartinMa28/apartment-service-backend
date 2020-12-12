@@ -8,6 +8,7 @@ import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import housesRouter from './routes/houses';
 import watchRouter from './routes/watch';
+import eventsRouter from './routes/events';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
@@ -34,11 +35,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// clients pool for real-time http sse notifications
+app.locals.clients = [];
+
 app.use('/', indexRouter);
 app.use('/user', usersRouter);
 app.use('/auth', authRouter);
 app.use('/houses', housesRouter);
 app.use('/watch', watchRouter);
+app.use('/events', eventsRouter);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -108,7 +113,8 @@ MongoClient.connect(
       findAndNotifySavedUsers(
         app.locals.db,
         change['documentKey']['_id'].toString(),
-        change['updateDescription']['updatedFields']['result-price']
+        change['updateDescription']['updatedFields']['result-price'],
+        app.locals.clients
       );
     });
   })

@@ -108,3 +108,6 @@ dist
 
 # data file
 apts.json
+
+# build
+build

@@ -15,7 +15,8 @@ const updateSavedPrice = async (db, saveRecordIdObject, updatedPrice) => {
 const findAndNotifySavedUsers = async (
   db,
   updatedApartmentId,
-  updatedPrice
+  updatedPrice,
+  clients
 ) => {
   const query = {
     apartmentId: updatedApartmentId,
@@ -30,6 +31,21 @@ const findAndNotifySavedUsers = async (
         console.log(
           `should notify [user: ${updatedSaveRecords[i]['userId']}] over here, new price is: ${updatedPrice}`
         );
+
+        for (let j = 0; j < clients.length; j++) {
+          if (clients[j].userId === updatedSaveRecords[i]['userId']) {
+            console.log('Inside if statement' + clients[j].userId);
+            clients[j].res.write(
+              'data: ' +
+                JSON.stringify({
+                  message: `One of your following houses becomes cheaper! It's ${updatedPrice} right now!`,
+                  apartmentId: updatedSaveRecords[i]['apartmentId'],
+                }) +
+                '\n\n'
+            );
+            break;
+          }
+        }
       }
       await updateSavedPrice(db, updatedSaveRecords[i]['_id'], updatedPrice);
     }
