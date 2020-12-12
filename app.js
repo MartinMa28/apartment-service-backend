@@ -13,6 +13,7 @@ import passport from 'passport';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import { Strategy as LocalStrategy } from 'passport-local';
+import findAndNotifySavedUsers from './utils/notificationService';
 
 dotenv.config();
 const app = express();
@@ -94,5 +95,21 @@ MongoClient.connect(
   .then((client) => {
     app.locals.db = client.db('apartment_database');
     app.listen(PORT, () => console.log(`Listening on port ${PORT} ...`));
+    const changeStream = app.locals.db.collection('apartment').watch();
+
+    changeStream.on('change', (change) => {
+      // console.log(
+      //   `Changed document key: ${change['documentKey']['_id'].toString()}`
+      // );
+      // console.log(
+      //   `Update description: result-price -> ${change['updateDescription']['updatedFields']['result-price']}`
+      // );
+
+      findAndNotifySavedUsers(
+        app.locals.db,
+        change['documentKey']['_id'].toString(),
+        change['updateDescription']['updatedFields']['result-price']
+      );
+    });
   })
   .catch((err) => console.log(err));

@@ -35,10 +35,9 @@ router.post('/update_price/:houseId/:price', async (req, res) => {
       },
     };
 
-    const result = await req.app.locals.db
+    await req.app.locals.db
       .collection('apartment')
       .updateOne(filter, updateDoc);
-    console.log(result);
 
     res.status(200).json({
       message: 'Updated the rent',
