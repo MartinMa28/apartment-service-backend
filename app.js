@@ -85,9 +85,12 @@ passport.deserializeUser(async (id, done) => {
 // =========== passport configs ===========
 
 // Create the MongoDB connection pool before the app runs
-MongoClient.connect('mongodb://db:27017', {
-  useUnifiedTopology: true,
-})
+MongoClient.connect(
+  'mongodb://mongo-1:27017,mongo-2:27017,mongo-3:27017/?replicaSet=apartmentRepl',
+  {
+    useUnifiedTopology: true,
+  }
+)
   .then((client) => {
     app.locals.db = client.db('apartment_database');
     app.listen(PORT, () => console.log(`Listening on port ${PORT} ...`));

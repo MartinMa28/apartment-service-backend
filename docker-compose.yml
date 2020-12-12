@@ -1,20 +1,57 @@
 version: '3'
 
 services:
-  db:
+  mongo-1:
     image: mongo:4.4.1
+    command:
+      - --storageEngine
+      - wiredTiger
+      - --replSet
+      - apartmentRepl
+    depends_on:
+      - mongo-2
+      - mongo-3
     restart: always
     deploy:
       resources:
         limits:
-          memory: 500M
+          memory: 300M
+
+  mongo-2:
+    image: mongo:4.4.1
+    command:
+      - --storageEngine
+      - wiredTiger
+      - --replSet
+      - apartmentRepl
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  mongo-3:
+    image: mongo:4.4.1
+    command:
+      - --storageEngine
+      - wiredTiger
+      - --replSet
+      - apartmentRepl
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
   web:
     build: .
     command: npm start
     ports:
       - '8000:8000'
     depends_on:
-      - db
+      - mongo-1
+      - mongo-2
+      - mongo-3
     volumes:
       - './:/code/'
     deploy:

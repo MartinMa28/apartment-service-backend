@@ -75,9 +75,12 @@ const processLocalJson = (filePath) => {
 
 async function insertDocs() {
   try {
-    const client = await MongoClient.connect('mongodb://db:27017', {
-      useUnifiedTopology: true,
-    });
+    const client = await MongoClient.connect(
+      'mongodb://mongo-1:27017,mongo-2:27017,mongo-3:27017/?replicaSet=apartmentRepl',
+      {
+        useUnifiedTopology: true,
+      }
+    );
 
     const db = client.db('apartment_database');
     await db.collection('apartment').deleteMany();
