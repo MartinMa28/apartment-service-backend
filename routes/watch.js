@@ -1,4 +1,5 @@
 import express from 'express';
+import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
@@ -7,10 +8,17 @@ router.get('/add/:apartmentId', async (req, res) => {
   const userId = req.user._id.toString();
 
   try {
-    await req.app.locals.db.collection('save_subs').insertOne({
-      apartmentId: apartmentId,
-      userId: userId,
+    const apartment = await req.app.locals.db.collection('apartment').findOne({
+      _id: new ObjectId(apartmentId),
     });
+
+    if (apartment) {
+      await req.app.locals.db.collection('save_subs').insertOne({
+        apartmentId: apartmentId,
+        userId: userId,
+        savedPrice: apartment['result-price'],
+      });
+    }
 
     res.status(200).json({
       message: 'Add a new watch',

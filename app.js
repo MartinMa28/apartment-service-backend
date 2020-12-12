@@ -8,11 +8,13 @@ import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import housesRouter from './routes/houses';
 import watchRouter from './routes/watch';
+import eventsRouter from './routes/events';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import { Strategy as LocalStrategy } from 'passport-local';
+import findAndNotifySavedUsers from './utils/notificationService';
 
 dotenv.config();
 const app = express();
@@ -33,11 +35,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// clients pool for real-time http sse notifications
+app.locals.clients = [];
+
 app.use('/', indexRouter);
 app.use('/user', usersRouter);
 app.use('/auth', authRouter);
 app.use('/houses', housesRouter);
 app.use('/watch', watchRouter);
+app.use('/events', eventsRouter);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -85,11 +91,31 @@ passport.deserializeUser(async (id, done) => {
 // =========== passport configs ===========
 
 // Create the MongoDB connection pool before the app runs
-MongoClient.connect('mongodb://db:27017', {
-  useUnifiedTopology: true,
-})
+MongoClient.connect(
+  'mongodb://mongo-1:27017,mongo-2:27017,mongo-3:27017/?replicaSet=apartmentRepl',
+  {
+    useUnifiedTopology: true,
+  }
+)
   .then((client) => {
     app.locals.db = client.db('apartment_database');
     app.listen(PORT, () => console.log(`Listening on port ${PORT} ...`));
+    const changeStream = app.locals.db.collection('apartment').watch();
+
+    changeStream.on('change', (change) => {
+      // console.log(
+      //   `Changed document key: ${change['documentKey']['_id'].toString()}`
+      // );
+      // console.log(
+      //   `Update description: result-price -> ${change['updateDescription']['updatedFields']['result-price']}`
+      // );
+
+      findAndNotifySavedUsers(
+        app.locals.db,
+        change['documentKey']['_id'].toString(),
+        change['updateDescription']['updatedFields']['result-price'],
+        app.locals.clients
+      );
+    });
   })
   .catch((err) => console.log(err));
