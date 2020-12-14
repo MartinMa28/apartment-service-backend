@@ -16,6 +16,7 @@ import passport from 'passport';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import { Strategy as LocalStrategy } from 'passport-local';
+import Queue from 'bull';
 import findAndNotifySavedUsers from './utils/notificationService';
 
 dotenv.config();
@@ -104,6 +105,8 @@ MongoClient.connect(
   .then((client) => {
     app.locals.db = client.db('apartment_database');
     app.listen(PORT, () => console.log(`Listening on port ${PORT} ...`));
+
+    // MongoDB change stream notification
     const changeStream = app.locals.db.collection('apartment').watch();
 
     changeStream.on('change', (change) => {
@@ -113,6 +116,32 @@ MongoClient.connect(
         change['updateDescription']['updatedFields']['result-price'],
         app.locals.clients
       );
+    });
+
+    // Email notification
+    const mailNotificationQueue = new Queue('mailNotification', {
+      redis: {
+        host: 'redis',
+        port: 6379,
+      },
+    });
+
+    mailNotificationQueue.process(async (job) => {
+      console.log('email job is completed');
+      console.log(job.data.userId);
+      for (let i = 0; i < app.locals.clients.length; i++) {
+        console.log(app.locals.clients[i].userId);
+        if (app.locals.clients[i].userId === job.data.userId) {
+          console.log('Found the user client');
+          app.locals.clients[i].res.write(
+            `data: ${JSON.stringify({
+              message: job.data.message,
+              email: true,
+            })}\n\n`
+          );
+        }
+        break;
+      }
     });
   })
   .catch((err) => console.log(err));

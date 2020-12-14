@@ -26,6 +26,9 @@ router.post('/:apartmentId', async (req, res) => {
         subject: apartment['result-title'],
         text: `${apartment['result-title']} - $${apartment['result-price']}/month`,
         html: apartment['postingbody'],
+        userId: req.user._id.toString(),
+        toPoster: true,
+        houseDetail: false,
       };
 
       await sendMailQueue.add(message);
@@ -39,7 +42,9 @@ router.post('/:apartmentId', async (req, res) => {
         subject: apartment['result-title'],
         text: `${apartment['result-title']} - $${apartment['result-price']}/month`,
         html: apartment['postingbody'],
-        userId: req.user._id,
+        userId: req.user._id.toString(),
+        toPoster: false,
+        houseDetail: true,
       };
 
       await sendMailQueue.add(message);

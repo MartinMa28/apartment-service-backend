@@ -51,6 +51,8 @@ const findAndNotifySavedUsers = async (
           subject: 'One of your following house gets cheaper',
           text: `new price is ${updatedPrice}`,
           html: `<h1>Cheaper house for $${updatedPrice}</h1>`,
+          toPoster: false,
+          houseDetail: false,
         };
 
         await sendMailQueue.add(message);
