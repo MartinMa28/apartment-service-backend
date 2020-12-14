@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 import logger from 'morgan';
 import { MongoClient, ObjectId } from 'mongodb';
 import indexRouter from './routes/index';
@@ -9,6 +10,7 @@ import authRouter from './routes/auth';
 import housesRouter from './routes/houses';
 import watchRouter from './routes/watch';
 import eventsRouter from './routes/events';
+import emailsRouter from './routes/emails';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
@@ -22,6 +24,7 @@ const PORT = process.env.PORT || 7000;
 
 app.use(logger('dev'));
 app.use(express.json());
+app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'build')));
@@ -44,6 +47,7 @@ app.use('/auth', authRouter);
 app.use('/houses', housesRouter);
 app.use('/watch', watchRouter);
 app.use('/events', eventsRouter);
+app.use('/email', emailsRouter);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -103,13 +107,6 @@ MongoClient.connect(
     const changeStream = app.locals.db.collection('apartment').watch();
 
     changeStream.on('change', (change) => {
-      // console.log(
-      //   `Changed document key: ${change['documentKey']['_id'].toString()}`
-      // );
-      // console.log(
-      //   `Update description: result-price -> ${change['updateDescription']['updatedFields']['result-price']}`
-      // );
-
       findAndNotifySavedUsers(
         app.locals.db,
         change['documentKey']['_id'].toString(),

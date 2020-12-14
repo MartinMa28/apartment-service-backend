@@ -1,3 +1,13 @@
+import Queue from 'bull';
+import { ObjectId } from 'mongodb';
+
+const sendMailQueue = new Queue('sendMail', {
+  redis: {
+    host: 'redis',
+    port: 6379,
+  },
+});
+
 const updateSavedPrice = async (db, saveRecordIdObject, updatedPrice) => {
   const filter = {
     _id: saveRecordIdObject,
@@ -32,9 +42,21 @@ const findAndNotifySavedUsers = async (
           `should notify [user: ${updatedSaveRecords[i]['userId']}] over here, new price is: ${updatedPrice}`
         );
 
+        const user = await db.collection('user').findOne({
+          _id: new ObjectId(updatedSaveRecords[i]['userId']),
+        });
+        const message = {
+          from: process.env.GMAIL_USERNAME,
+          to: user.email,
+          subject: 'One of your following house gets cheaper',
+          text: `new price is ${updatedPrice}`,
+          html: `<h1>Cheaper house for $${updatedPrice}</h1>`,
+        };
+
+        await sendMailQueue.add(message);
+
         for (let j = 0; j < clients.length; j++) {
           if (clients[j].userId === updatedSaveRecords[i]['userId']) {
-            console.log('Inside if statement' + clients[j].userId);
             clients[j].res.write(
               'data: ' +
                 JSON.stringify({
