@@ -51,26 +51,16 @@ router.post('/update_price/:houseId/:price', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const {
-      rooms,
-      minPrice,
-      maxPrice,
-      minArea,
-      maxArea,
-      minDate,
-      maxDate,
-      page,
-    } = req.query;
+    const { rooms, minPrice, maxPrice, minArea, maxArea, page } = req.query;
 
     const pageSize = 24;
     let query;
 
-    if (minArea && maxArea && minDate && maxDate) {
+    if (minArea && maxArea) {
       query = {
         bedrooms: parseInt(rooms),
         'result-price': { $gt: parseInt(minPrice), $lt: parseInt(maxPrice) },
         area: { $gt: parseInt(minArea), $lt: parseInt(maxArea) },
-        'result-date': { $gt: new Date(minDate), $lt: new Date(maxDate) },
       };
     } else {
       query = {
