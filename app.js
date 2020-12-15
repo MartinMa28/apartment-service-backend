@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 import logger from 'morgan';
 import { MongoClient, ObjectId } from 'mongodb';
 import indexRouter from './routes/index';
@@ -9,11 +10,13 @@ import authRouter from './routes/auth';
 import housesRouter from './routes/houses';
 import watchRouter from './routes/watch';
 import eventsRouter from './routes/events';
+import emailsRouter from './routes/emails';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import { Strategy as LocalStrategy } from 'passport-local';
+import Queue from 'bull';
 import findAndNotifySavedUsers from './utils/notificationService';
 
 dotenv.config();
@@ -22,6 +25,7 @@ const PORT = process.env.PORT || 7000;
 
 app.use(logger('dev'));
 app.use(express.json());
+app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'build')));
@@ -44,6 +48,7 @@ app.use('/auth', authRouter);
 app.use('/houses', housesRouter);
 app.use('/watch', watchRouter);
 app.use('/events', eventsRouter);
+app.use('/email', emailsRouter);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -100,22 +105,43 @@ MongoClient.connect(
   .then((client) => {
     app.locals.db = client.db('apartment_database');
     app.listen(PORT, () => console.log(`Listening on port ${PORT} ...`));
+
+    // MongoDB change stream notification
     const changeStream = app.locals.db.collection('apartment').watch();
 
     changeStream.on('change', (change) => {
-      // console.log(
-      //   `Changed document key: ${change['documentKey']['_id'].toString()}`
-      // );
-      // console.log(
-      //   `Update description: result-price -> ${change['updateDescription']['updatedFields']['result-price']}`
-      // );
-
       findAndNotifySavedUsers(
         app.locals.db,
         change['documentKey']['_id'].toString(),
         change['updateDescription']['updatedFields']['result-price'],
         app.locals.clients
       );
+    });
+
+    // Email notification
+    const mailNotificationQueue = new Queue('mailNotification', {
+      redis: {
+        host: 'redis',
+        port: 6379,
+      },
+    });
+
+    mailNotificationQueue.process(async (job) => {
+      console.log('email job is completed');
+      console.log(job.data.userId);
+      for (let i = 0; i < app.locals.clients.length; i++) {
+        console.log(app.locals.clients[i].userId);
+        if (app.locals.clients[i].userId === job.data.userId) {
+          console.log('Found the user client');
+          app.locals.clients[i].res.write(
+            `data: ${JSON.stringify({
+              message: job.data.message,
+              email: true,
+            })}\n\n`
+          );
+        }
+        break;
+      }
     });
   })
   .catch((err) => console.log(err));
