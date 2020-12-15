@@ -23,14 +23,13 @@ router.post('/:apartmentId', async (req, res) => {
       const message = {
         from: process.env.GMAIL_USERNAME,
         to: process.env.DUMMY_POSTER_EMAIL_ADDR,
-        subject: apartment['result-title'],
+        subject: 'User Asking ' + apartment['result-title'],
         text: `${apartment['result-title']} - $${apartment['result-price']}/month`,
-        html: apartment['postingbody'],
+        html: req.body.html,
         userId: req.user._id.toString(),
         toPoster: true,
         houseDetail: false,
       };
-
       await sendMailQueue.add(message);
       res.status(200).json({
         message: 'Sent (poster) message to the email queue.',
